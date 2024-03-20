@@ -9,6 +9,7 @@
     "http-server": "^14.1.1",
     "lite-server": "^2.6.1",
     "mocha": "^10.3.0",
+    "mongodb": "^6.5.0",
     "mongoose": "^8.2.2",
     "socket.io": "^4.7.5",
     "solc": "^0.8.25",
