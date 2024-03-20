@@ -4,14 +4,37 @@
     <title>Map with Random Houses</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
     <style>
-        #map { height: 100vh; width: 100%; }
+        #map {height: 98vh; width: 99%; }
     </style>
 </head>
 <body>
 <div id="map"></div>
+
+<div id="controls" style="position: absolute; top: 10px; right: 10px; background: white; padding: 10px;">
+    <div>
+        <label for="numHouses">Number of Houses: </label>
+        <input type="number" id="numHouses" value="5" min="1" max="100">
+    </div>
+    <div>
+        <label for="panelArea">Panel Area (m²): </label>
+        <input type="range" id="panelArea" min="10" max="40" value="25">
+        <span id="panelAreaValue">25</span>
+    </div>
+    <div>
+        <label for="avgIrradiance">Average Irradiance (W/m²): </label>
+        <input type="range" id="avgIrradiance" min="100" max="250" value="170">
+        <span id="avgIrradianceValue">170</span>
+    </div>
+    <button onclick="updateMap()">Update Map</button>
+</div>
+
+
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js" integrity="sha384-Ltrj3W8xM0z2FAWdJpCvOMLw8J3K6vFz8K86G2bhF6TkmdtkMaFIMpovSXNVVZ3d" crossorigin="anonymous"></script>
+
 <script src="js/map.js"></script>
 <script src="js/houseAdd.js"></script>
 </body>

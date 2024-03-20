@@ -10,6 +10,6 @@ var map = L.map('map').setView([19.8711, 75.3717], 13);
 L.tileLayer('https://{s}.tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=de01857759864395bf5b413a4ed8b94a', {
     attribution: 'Map data &copy; OpenStreetMap contributors, Thunderforest',
     // apikey: 'de01857759864395bf5b413a4ed8b94a',
-    maxZoom: 22,
+    maxZoom: 18,
 }).addTo(map);
 

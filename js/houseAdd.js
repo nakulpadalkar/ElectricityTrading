@@ -3,17 +3,18 @@ let waypoints = [];
 
 // Function to add a house marker and save its location as a waypoint
 function addRandomHouse(index) {
-    var lat = 19.8711 + (Math.random() - 0.5) * 0.1; // Adjusted for a broader spread around Aurangabad
-    var lon = 75.3717 + (Math.random() - 0.5) * 0.1; // Adjusted for a broader spread around Aurangabad
-    
-    // Add the generated location as a waypoint for routing
-    waypoints.push(L.latLng(lat, lon));
-    
-    // Create and add a marker for the house to the map
+    var lat = 19.8711 + (Math.random() - 0.5) * 0.1;
+    var lon = 75.3717 + (Math.random() - 0.5) * 0.1;
+    var panelArea = Math.random() * (40 - 10) + 10; // Random panel area between 10m² and 40m²
+    var efficiency = 0.20; // 20%
+    var averageIrradiance = 170; // W/m²
+    var solarPotential = panelArea * efficiency * averageIrradiance; // Simple potential calculation
+
     L.marker([lat, lon])
         .addTo(map)
-        .bindPopup('House' + index);
+        .bindPopup('House' + index + ': Solar Potential = ' + solarPotential.toFixed(2) + 'W');
 }
+
 
 // Add 25 random houses to the map and collect their locations for routing
 for (let i = 1; i <= 25; i++) {
@@ -26,7 +27,7 @@ function addRoutingControl() {
         waypoints: waypoints,
         routeWhileDragging: true,
         lineOptions: {
-            styles: [{color: 'red', opacity: 1, weight: 1.5}]
+            styles: [{color: '#336699', opacity: 1, weight: 1.5}]
         },
         createMarker: function() { return null; } // Disable default markers
     }).addTo(map);
