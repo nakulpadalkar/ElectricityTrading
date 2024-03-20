@@ -1,0 +1,55 @@
+const EnergySharingSystem = artifacts.require("EnergySharingSystem");
+
+contract("EnergySharingSystem", accounts => {
+
+    let system;
+
+    beforeEach(async () => {
+        system = await EnergySharingSystem.new();
+    });
+
+    it("should register a new house", async () => {
+        const solarPanelStrength = 100;
+        await system.registerHouse(solarPanelStrength);
+
+        const house = await system.houses.call(accounts[0]);
+
+        assert.equal(house.solarPanelStrength, solarPanelStrength, "Incorrect solar panel strength");
+        assert.equal(house.energyConsumption, 0, "Incorrect energy consumption");
+        assert.equal(house.energySurplus, 0, "Incorrect energy surplus");
+        assert.equal(house.isRegistered, true, "House should be registered");
+    });
+
+    it("should update a house's data", async () => {
+        const energyConsumption = 50;
+        const energySurplus = 100;
+        await system.registerHouse(100);
+        await system.updateHouseData(accounts[0], energyConsumption, energySurplus);
+
+        const house = await system.houses.call(accounts[0]);
+
+        assert.equal(house.energyConsumption, energyConsumption, "Incorrect energy consumption");
+        assert.equal(house.energySurplus, energySurplus, "Incorrect energy surplus");
+    });
+
+    it("should share energy between two houses", async () => {
+        const solarPanelStrength1 = 100;
+        const solarPanelStrength2 = 200;
+        const energySurplus1 = 100;
+        const energySurplus2 = 200;
+        await system.registerHouse(solarPanelStrength1);
+        await system.registerHouse(solarPanelStrength2);
+        await system.updateHouseData(accounts[0], 0, energySurplus1);
+        const toHouse = "0x123";
+        await system.updateHouseData(toHouse, 0, energySurplus2);
+        const amount = 50;
+
+        await system.shareEnergy(accounts[0], toHouse, amount);
+
+        const house1 = await system.houses.call(accounts[0]);
+        const house2 = await system.houses.call(toHouse);
+
+        assert.equal(house1.energySurplus, energySurplus1 - amount, "Incorrect energy surplus for house1");
+        assert.equal(house2.energySurplus, energySurplus2 + amount, "Incorrect energy surplus for house2");
+    });
+});

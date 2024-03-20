@@ -1,0 +1,56 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.10;
+
+import "truffle/Assert.sol";
+import "truffle/DeployedAddresses.sol";
+import "../contracts/EnergySharingSystem.sol";
+
+contract TestEnergySharingSystem {
+
+    EnergySharingSystem system = EnergySharingSystem(DeployedAddresses.EnergySharingSystem());
+
+    function testRegisterOrUpdateHouse() public {
+        uint256 solarPanelStrength = 3000;
+        uint256 energyConsumption = 2000;
+
+        // Test that a new house can be registered
+        system.registerOrUpdateHouse(solarPanelStrength, energyConsumption);
+        EnergySharingSystem.House memory house = system.houses(msg.sender);
+        Assert.equal(house.solarPanelStrength, solarPanelStrength, "Solar panel strength should be set");
+        Assert.equal(house.energyConsumption, energyConsumption, "Energy consumption should be set");
+        Assert.equal(house.energySurplus, int256(solarPanelStrength) - int256(energyConsumption), "Energy surplus should be calculated");
+        Assert.equal(house.isRegistered, true, "House should be registered");
+
+        // Test that an existing house can be updated
+        uint256 newEnergyConsumption = 2500;
+        system.registerOrUpdateHouse(solarPanelStrength, newEnergyConsumption);
+        house = system.houses(msg.sender);
+        Assert.equal(house.energyConsumption, newEnergyConsumption, "Energy consumption should be updated");
+        Assert.equal(house.energySurplus, int256(solarPanelStrength) - int256(newEnergyConsumption), "Energy surplus should be updated");
+    }
+
+    function testShareEnergy() public {
+        uint256 solarPanelStrength1 = 3000;
+        uint256 energyConsumption1 = 2000;
+        uint256 solarPanelStrength2 = 4000;
+        uint256 energyConsumption2 = 3000;
+        address house1 = address(0x01);
+        address house2 = address(0x02);
+        uint256 amount = 500;
+
+        // Register two houses
+        system.registerOrUpdateHouse(solarPanelStrength1, energyConsumption1, {from: house1});
+        system.registerOrUpdateHouse(solarPanelStrength2, energyConsumption2, {from: house2});
+
+        // Share energy from house1 to house2
+        system.shareEnergy(house1, house2, amount);
+
+        // Check that energy surplus and consumption are updated correctly for both houses
+        EnergySharingSystem.House memory h1 = system.houses(house1);
+        EnergySharingSystem.House memory h2 = system.houses(house2);
+        Assert.equal(h1.energySurplus, int256(solarPanelStrength1) - int256(energyConsumption1) - int256(amount), "Energy surplus should be updated for house1");
+        Assert.equal(h2.energySurplus, int256(solarPanelStrength2) - int256(energyConsumption2) + int256(amount), "Energy surplus should be updated for house2");
+    }
+
+}

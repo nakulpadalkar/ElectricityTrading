@@ -1,0 +1,49 @@
+const EnergySharingSystem = artifacts.require("EnergySharingSystem");
+
+contract("EnergySharingSystem", (accounts) => {
+  it("should register a new house and update its data", async () => {
+    const system = await EnergySharingSystem.deployed();
+
+    const solarPanelStrength = 5000;
+    const energyConsumption = 1000;
+
+    // Register a new house
+    await system.registerHouse(solarPanelStrength, energyConsumption);
+
+    // Check that the house was registered
+    const house = await system.houses(accounts[0]);
+    assert.equal(house.isRegistered, true, "House was not registered");
+
+    // Check that the house data was updated
+    assert.equal(house.solarPanelStrength, solarPanelStrength, "Solar panel strength was not updated");
+    assert.equal(house.energyConsumption, energyConsumption, "Energy consumption was not updated");
+    assert.equal(house.energySurplus, solarPanelStrength - energyConsumption, "Energy surplus was not updated correctly");
+  });
+
+  it("should share energy between two houses", async () => {
+    const system = await EnergySharingSystem.deployed();
+
+    // Register two houses
+    const solarPanelStrength1 = 5000;
+    const energyConsumption1 = 1000;
+    await system.registerHouse(solarPanelStrength1, energyConsumption1);
+
+    const solarPanelStrength2 = 3000;
+    const energyConsumption2 = 2000;
+    await system.registerHouse(solarPanelStrength2, energyConsumption2);
+
+    // Update the energy consumption and surplus for both houses
+    await system.updateHouseData(accounts[0], energyConsumption1, solarPanelStrength1 - energyConsumption1);
+    await system.updateHouseData(accounts[1], energyConsumption2, solarPanelStrength2 - energyConsumption2);
+
+    // Share energy from the first house to the second house
+    const amount = 500;
+    await system.shareEnergy(accounts[0], accounts[1], amount);
+
+    // Check that the energy was transferred correctly
+    const house1 = await system.houses(accounts[0]);
+    const house2 = await system.houses(accounts[1]);
+    assert.equal(house1.energySurplus, solarPanelStrength1 - energyConsumption1 - amount, "Energy surplus for house 1 was not updated correctly");
+    assert.equal(house2.energySurplus, solarPanelStrength2 - energyConsumption2 + amount, "Energy surplus for house 2 was not updated correctly");
+  });
+});

@@ -1,0 +1,71 @@
+const EnergySharingSystem = artifacts.require("EnergySharingSystem");
+
+contract("EnergySharingSystem", (accounts) => {
+  let energySharingSystem;
+
+  const house1 = accounts[1];
+  const house2 = accounts[2];
+  const house3 = accounts[3];
+
+  beforeEach(async () => {
+    energySharingSystem = await EnergySharingSystem.new();
+  });
+
+  it("should register a new house", async () => {
+    await energySharingSystem.registerOrUpdateHouse(100, 50, { from: house1 });
+    const house = await energySharingSystem.houses(house1);
+
+    assert.equal(house.solarPanelStrength, 100);
+    assert.equal(house.energyConsumption, 50);
+    assert.equal(house.energySurplus, 50);
+    assert.equal(house.isRegistered, true);
+  });
+
+  it("should update an existing house", async () => {
+    await energySharingSystem.registerOrUpdateHouse(100, 50, { from: house1 });
+
+    await energySharingSystem.registerOrUpdateHouse(150, 75, { from: house1 });
+    const house = await energySharingSystem.houses(house1);
+
+    assert.equal(house.solarPanelStrength, 150);
+    assert.equal(house.energyConsumption, 75);
+    assert.equal(house.energySurplus, 75);
+    assert.equal(house.isRegistered, true);
+  });
+
+  it("should share energy between two houses", async () => {
+    await energySharingSystem.registerOrUpdateHouse(100, 75, { from: house1 });
+    await energySharingSystem.registerOrUpdateHouse(200, 150, { from: house2 });
+
+    await energySharingSystem.shareEnergy(house2, house1, 75, { from: house2 });
+
+    const house1Data = await energySharingSystem.houses(house1);
+    const house2Data = await energySharingSystem.houses(house2);
+
+    assert.equal(house1Data.energySurplus, 0);
+    assert.equal(house2Data.energySurplus, 75);
+  });
+
+  it("should not share energy if one or more houses are not registered", async () => {
+    await energySharingSystem.registerOrUpdateHouse(100, 75, { from: house1 });
+
+    try {
+      await energySharingSystem.shareEnergy(house1, house2, 75, { from: house1 });
+      assert.fail();
+    } catch (error) {
+      assert(error.message.includes("One or more houses are not registered"));
+    }
+  });
+
+  it("should not share energy if the sender does not have enough energy surplus", async () => {
+    await energySharingSystem.registerOrUpdateHouse(100, 75, { from: house1 });
+    await energySharingSystem.registerOrUpdateHouse(200, 150, { from: house2 });
+
+    try {
+      await energySharingSystem.shareEnergy(house1, house2, 100, { from: house1 });
+      assert.fail();
+    } catch (error) {
+      assert(error.message.includes("Not enough energy surplus"));
+    }
+  });
+});

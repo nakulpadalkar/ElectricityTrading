@@ -1,0 +1,49 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.0;
+
+import "truffle/Assert.sol";
+import "../contracts/EnergySharingSystem.sol";
+
+contract TestEnergySharingSystem {
+
+    EnergySharingSystem energySharingSystem;
+    uint256 constant solarPanelStrength = 1000;
+    uint256 constant energyConsumption = 500;
+
+    function beforeEach() public {
+        energySharingSystem = new EnergySharingSystem();
+    }
+
+    function testRegisterHouse() public {
+        energySharingSystem.registerOrUpdateHouse(solarPanelStrength, energyConsumption);
+        EnergySharingSystem.House memory house = energySharingSystem.houses(address(this));
+        Assert.equal(house.solarPanelStrength, solarPanelStrength, "Solar panel strength not registered");
+        Assert.equal(house.energyConsumption, energyConsumption, "Energy consumption not registered");
+        Assert.equal(house.energySurplus, int256(solarPanelStrength) - int256(energyConsumption), "Energy surplus not calculated correctly");
+        Assert.equal(house.isRegistered, true, "House not registered");
+    }
+
+    function testShareEnergy() public {
+        address house1 = address(this);
+        address house2 = address(0x1);
+        energySharingSystem.registerOrUpdateHouse(solarPanelStrength, energyConsumption);
+        energySharingSystem.registerOrUpdateHouse(solarPanelStrength, energyConsumption);
+        energySharingSystem.shareEnergy(house1, house2, 200);
+        EnergySharingSystem.House memory house1Data = energySharingSystem.houses(house1);
+        EnergySharingSystem.House memory house2Data = energySharingSystem.houses(house2);
+        Assert.equal(house1Data.energySurplus, int256(solarPanelStrength) - int256(energyConsumption) - 200, "Energy surplus not updated correctly");
+        Assert.equal(house2Data.energySurplus, int256(solarPanelStrength) - int256(energyConsumption) + 200, "Energy surplus not updated correctly");
+    }
+
+    function testBuyEnergy() public payable {
+        energySharingSystem.registerOrUpdateHouse(solarPanelStrength, energyConsumption);
+        uint256 initialBalance = address(this).balance;
+        energySharingSystem.buyEnergy{value: 11 wei}(address(this), 1);
+        uint256 finalBalance = address(this).balance;
+        Assert.equal(finalBalance, initialBalance + 11 wei, "Balance not updated correctly");
+        EnergySharingSystem.House memory houseData = energySharingSystem.houses(address(this));
+        Assert.equal(houseData.energyConsumption, energyConsumption + 1, "Energy consumption not updated correctly");
+        Assert.equal(houseData.energySurplus, int256(solarPanelStrength) - int256(energyConsumption) - 1, "Energy surplus not updated correctly");
+    }
+}

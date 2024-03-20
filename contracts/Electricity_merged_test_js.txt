@@ -1,0 +1,50 @@
+const EnergySharingSystem = artifacts.require("EnergySharingSystem");
+
+contract("EnergySharingSystem", (accounts) => {
+  let energySharingSystem;
+
+  beforeEach(async () => {
+    energySharingSystem = await EnergySharingSystem.new();
+  });
+
+  it("should register a house", async () => {
+    const solarPanelStrength = 1000;
+    const energyConsumption = 800;
+    const result = await energySharingSystem.registerOrUpdateHouse(solarPanelStrength, energyConsumption, { from: accounts[0] });
+    const event = result.logs[0].args;
+    assert.equal(event.houseAddress, accounts[0]);
+    assert.equal(event.solarPanelStrength, solarPanelStrength);
+    assert.equal(event.energyConsumption, energyConsumption);
+  });
+
+  it("should update a house", async () => {
+    const solarPanelStrength = 1000;
+    const energyConsumption = 800;
+    await energySharingSystem.registerOrUpdateHouse(solarPanelStrength, energyConsumption, { from: accounts[0] });
+    const newEnergyConsumption = 900;
+    const result = await energySharingSystem.registerOrUpdateHouse(solarPanelStrength, newEnergyConsumption, { from: accounts[0] });
+    const event = result.logs[0].args;
+    assert.equal(event.houseAddress, accounts[0]);
+    assert.equal(event.solarPanelStrength, solarPanelStrength);
+    assert.equal(event.energyConsumption, newEnergyConsumption);
+  });
+
+  it("should share energy between two houses", async () => {
+    const solarPanelStrength1 = 1000;
+    const energyConsumption1 = 800;
+    await energySharingSystem.registerOrUpdateHouse(solarPanelStrength1, energyConsumption1, { from: accounts[0] });
+
+    const solarPanelStrength2 = 800;
+    const energyConsumption2 = 1000;
+    await energySharingSystem.registerOrUpdateHouse(solarPanelStrength2, energyConsumption2, { from: accounts[1] });
+
+    const amount = 300;
+    await energySharingSystem.shareEnergy(accounts[0], accounts[1], amount, { from: accounts[0] });
+
+    const house1 = await energySharingSystem.houses(accounts[0]);
+    const house2 = await energySharingSystem.houses(accounts[1]);
+
+    assert.equal(house1.energySurplus, solarPanelStrength1 - energyConsumption1 - amount);
+    assert.equal(house2.energySurplus, solarPanelStrength2 - energyConsumption2 + amount);
+  });
+});

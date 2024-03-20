@@ -1,0 +1,43 @@
+const EnergySharingSystem = artifacts.require("EnergySharingSystem");
+
+contract("EnergySharingSystem", (accounts) => {
+  let energySharingSystem;
+
+  beforeEach(async () => {
+    energySharingSystem = await EnergySharingSystem.new();
+  });
+
+  it("should allow a house to buy energy and pay the owner", async () => {
+    // Register the two houses
+    await energySharingSystem.registerOrUpdateHouse(100, 50, { from: accounts[0] });
+    await energySharingSystem.registerOrUpdateHouse(150, 75, { from: accounts[1] });
+
+    // Share energy from house 1 to house 2
+    await energySharingSystem.shareEnergy(accounts[0], accounts[1], 25, { from: accounts[0] });
+
+    // Get the energy surplus of each house
+    const house1Surplus = await energySharingSystem.getEnergySurplus(accounts[0]);
+    const house2Surplus = await energySharingSystem.getEnergySurplus(accounts[1]);
+
+    // Check that the energy was transferred correctly
+    assert.equal(house1Surplus.toNumber(), 25, "House 1 energy surplus is incorrect");
+    assert.equal(house2Surplus.toNumber(), 100, "House 2 energy surplus is incorrect");
+
+    // Buy energy from house 2
+    const energyToBuy = 30;
+    const energyCost = energyToBuy * 11; // 11 wei per unit
+    await energySharingSystem.buyEnergy(accounts[1], energyToBuy, { from: accounts[0], value: energyCost });
+
+    // Get the energy surplus of each house
+    const newHouse1Surplus = await energySharingSystem.getEnergySurplus(accounts[0]);
+    const newHouse2Surplus = await energySharingSystem.getEnergySurplus(accounts[1]);
+
+    // Check that the energy was transferred correctly
+    assert.equal(newHouse1Surplus.toNumber(), 55, "House 1 energy surplus is incorrect after buying energy");
+    assert.equal(newHouse2Surplus.toNumber(), 70, "House 2 energy surplus is incorrect after selling energy");
+
+    // Check that the owner of the energy received the payment
+    const ownerBalance = await web3.eth.getBalance(accounts[1]);
+    assert.equal(ownerBalance, web3.utils.toBN(energyCost), "Owner of the energy did not receive the correct payment");
+  });
+});

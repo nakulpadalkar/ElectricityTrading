@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.10;
+
+contract EnergySharingSystem {
+
+    struct House {
+        uint256 solarPanelStrength;
+        uint256 energyConsumption;
+        int256 energySurplus;
+        bool isRegistered;
+    }
+
+    mapping(address => House) public houses;
+
+    event HouseRegistered(address indexed houseAddress, uint256 solarPanelStrength, uint256 energyConsumption);
+    event EnergyShared(address indexed fromHouse, address indexed toHouse, uint256 amount);
+
+    function registerOrUpdateHouse(uint256 _solarPanelStrength, uint256 _energyConsumption) external {
+        House storage house = houses[msg.sender];
+        
+        if (!house.isRegistered) {
+            house.isRegistered = true;
+            house.solarPanelStrength = _solarPanelStrength;
+            emit HouseRegistered(msg.sender, _solarPanelStrength, _energyConsumption);
+        }
+        
+        house.energyConsumption = _energyConsumption;
+        house.energySurplus = int256(_solarPanelStrength) - int256(_energyConsumption);
+        emit HouseRegistered(msg.sender, _solarPanelStrength, _energyConsumption);
+    }
+
+    function shareEnergy(address _fromHouse, address _toHouse) external {
+        require(houses[_fromHouse].isRegistered && houses[_toHouse].isRegistered, "One or more houses are not registered");
+        int256 deficit = int256(houses[_toHouse].energyConsumption) - houses[_toHouse].energySurplus;
+        require(deficit > 0, "No energy deficit at the receiving house");
+        uint256 amount = uint256(deficit);
+        require(houses[_fromHouse].energySurplus >= int256(amount), "Not enough energy surplus");
+        houses[_fromHouse].energySurplus -= int256(amount);
+        houses[_toHouse].energySurplus += int256(amount);
+        emit EnergyShared(_fromHouse, _toHouse, amount);
+    }
+}

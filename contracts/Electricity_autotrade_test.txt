@@ -1,0 +1,55 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.10;
+
+import "truffle/Assert.sol";
+import "../contracts/EnergySharingSystem.sol";
+
+contract TestEnergySharingSystem {
+    EnergySharingSystem system;
+
+    function beforeEach() public {
+        system = new EnergySharingSystem();
+    }
+
+    function testRegisterHouse() public {
+        uint256 solarPanelStrength = 100;
+        uint256 energyConsumption = 50;
+        system.registerOrUpdateHouse(solarPanelStrength, energyConsumption);
+        EnergySharingSystem.House memory house = system.houses(msg.sender);
+        Assert.equal(house.solarPanelStrength, solarPanelStrength, "Solar panel strength not registered correctly");
+        Assert.equal(house.energyConsumption, energyConsumption, "Energy consumption not registered correctly");
+        Assert.equal(house.energySurplus, int256(solarPanelStrength) - int256(energyConsumption), "Energy surplus not calculated correctly");
+        Assert.equal(house.isRegistered, true, "House not registered");
+    }
+
+    function testUpdateHouseData() public {
+        uint256 solarPanelStrength = 100;
+        uint256 energyConsumption1 = 50;
+        uint256 energyConsumption2 = 60;
+        system.registerOrUpdateHouse(solarPanelStrength, energyConsumption1);
+        system.updateHouseData(msg.sender, energyConsumption2);
+        EnergySharingSystem.House memory house = system.houses(msg.sender);
+        Assert.equal(house.energyConsumption, energyConsumption2, "Energy consumption not updated correctly");
+        Assert.equal(house.energySurplus, int256(solarPanelStrength) - int256(energyConsumption2), "Energy surplus not updated correctly");
+    }
+
+    function testShareEnergy() public {
+        uint256 solarPanelStrength1 = 100;
+        uint256 energyConsumption1 = 50;
+        uint256 solarPanelStrength2 = 150;
+        uint256 energyConsumption2 = 130;
+        address house1 = address(0x1);
+        address house2 = address(0x2);
+        system.registerOrUpdateHouse(solarPanelStrength1, energyConsumption1, {from: house1});
+        system.registerOrUpdateHouse(solarPanelStrength2, energyConsumption2, {from: house2});
+
+        // House 1 shares energy with House 2 to nullify its deficit
+        uint256 amount = uint256(int256(energyConsumption2) - int256(solarPanelStrength2));
+        system.shareEnergy(house1, house2, amount);
+
+        EnergySharingSystem.House memory h1 = system.houses(house1);
+        EnergySharingSystem.House memory h2 = system.houses(house2);
+        Assert.equal(h1.energySurplus, int256(solarPanelStrength1) - int256(energyConsumption1) - int256(amount), "Energy surplus not updated correctly for House 1");
+        Assert.equal(h2.energySurplus, int256(solarPanelStrength2) - int256(energyConsumption2) + int256(amount), "Energy surplus not updated correctly for House 2");
+    }
+}
