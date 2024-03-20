@@ -49,14 +49,52 @@ function connectHousesWithRoutes() {
     }
 }
 
+// Function to inject data into MongoDB via backend API
+async function injectDataToMongoDB(data) {
+    try {
+        const response = await fetch('/api/injectData', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            throw new Error('Failed to inject data to MongoDB');
+        }
+        console.log('Data injected to MongoDB successfully');
+    } catch (error) {
+        console.error('Error injecting data to MongoDB:', error);
+    }
+}
+
 // Update the map with a fixed number of houses and connect them
 function updateMap() {
     clearMap(); // Start with a fresh map
     
     var numHouses = 25; // Fixed number of houses
+    var dataToInject = []; // Array to store data to be injected into MongoDB
     for (let i = 1; i <= numHouses; i++) {
+        var lat = 19.8711 + (Math.random() - 0.5) * 0.1;
+        var lon = 75.3717 + (Math.random() - 0.5) * 0.1;
+        var solarGenerationPerMonth = Math.random() * (310 - 10) + 10; // Simulating skewed distribution for solar generation
+        var consumption = Math.round(Math.pow(Math.random(), 2) * (310 - 10) + 10); // Skewed consumption towards lower values
+        
+        // Prepare data for injection into MongoDB
+        var houseData = {
+            lat: lat,
+            lon: lon,
+            solarGenerationPerMonth: solarGenerationPerMonth,
+            consumption: consumption
+        };
+        dataToInject.push(houseData);
+
         addRandomHouse(i, numHouses);
     }
+
+    // Inject data into MongoDB
+    injectDataToMongoDB(dataToInject);
 }
 
 document.addEventListener('DOMContentLoaded', updateMap);
+
