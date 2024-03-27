@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const connectDB = require('./config/database'); // Adjust the path as needed
+const startEnergySimulation = require('./simulations/energySimulation');
+startEnergySimulation(); // Start the energy simulation
 
 const app = express();
 const port = process.env.PORT || 3000;

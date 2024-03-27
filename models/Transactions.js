@@ -2,11 +2,12 @@
 const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema({
-  fromHouseId: mongoose.Schema.Types.ObjectId,
-  toHouseId: mongoose.Schema.Types.ObjectId,
-  energyAmount: Number, // Amount of energy traded
-  transactionTime: Date,
+  fromHouseId: { type: mongoose.Schema.Types.ObjectId, ref: 'HouseData' },
+  toHouseId: { type: mongoose.Schema.Types.ObjectId, ref: 'HouseData' },
+  energyAmount: Number,
+  transactionTime: { type: Date, default: Date.now },
 });
 
 const Transaction = mongoose.model('Transaction', transactionSchema);
+
 module.exports = Transaction;
